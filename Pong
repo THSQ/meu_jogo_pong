@@ -1,0 +1,164 @@
+// Bloco 1: Declaração de Variáveis
+let remoJogador;
+let remoComputador;
+let bola;
+let pontosJogador = 0;
+let pontosComputador = 0;
+const velocidadeComputador = 2;
+const barraEspessura = 10;
+
+/* Descrição: Este bloco define todas as variáveis que serão utilizadas no programa. Isso inclui os remos do jogador e do computador, a bola e a pontuação de ambos os jogadores. Além disso, define uma velocidade constante para o computador e a espessura das barras laterais.
+*/
+
+// Bloco 2: Definição da Classe Bola
+class Bola {
+    constructor() {
+        this.x = 0;
+        this.y = 0;
+        this.diametro = 20;
+        this.velocidadeX = 0;
+        this.velocidadeY = 0;
+    }
+
+    inicializar() {
+        this.x = width / 2;
+        this.y = height / 2;
+        this.velocidadeX = random([3, -3]);
+        this.velocidadeY = random([3, -3]);
+    }
+
+    exibir() {
+        ellipse(this.x, this.y, this.diametro);
+    }
+
+    mover() {
+        this.x += this.velocidadeX;
+        this.y += this.velocidadeY;
+
+        if (this.y - this.diametro/2 < barraEspessura || this.y + this.diametro/2 > height - barraEspessura) {
+            this.velocidadeY *= -1;
+        }
+    }
+
+    colisao(remo) {
+        let metadeRaquete = remo.altura / 2;
+        let metadeBola = this.diametro / 2;
+        if (remo.esquerda) {
+            if (this.y + metadeBola > remo.y - metadeRaquete && 
+                this.y - metadeBola < remo.y + metadeRaquete && this.x - metadeBola < remo.largura) {
+                this.velocidadeY += (this.y - remo.y) * 0.05; // adiciona o efeito com base na diferença do centro
+                return true;
+            }
+        } else {
+            if (this.y + metadeBola > remo.y - metadeRaquete && 
+                this.y - metadeBola < remo.y + metadeRaquete && this.x + metadeBola > width - remo.largura) {
+                this.velocidadeY += (this.y - remo.y) * 0.05; // adiciona o efeito com base na diferença do centro
+                return true;
+            }
+        }
+        return false;
+    }
+
+    reiniciar() {
+        this.inicializar();
+    }
+
+    aumentarVelocidade() {
+        const fatorAumento = 1.1;
+        this.velocidadeX *= fatorAumento;
+        this.velocidadeY *= fatorAumento;
+    }
+}
+
+/* Descrição: Este bloco define a classe Bola, que contém a lógica para a inicialização, exibição, movimentação, detecção de colisão, reinicialização e aumento de velocidade da bola no jogo.
+
+*/
+
+// Bloco 3: Definição da Classe Remo
+class Remo {
+    constructor(esquerda) {
+        this.y = 0;
+        this.largura = 15;
+        this.altura = 80;
+        this.esquerda = esquerda;
+    }
+
+    mover(yPos) {
+        this.y = yPos;
+        this.y = constrain(this.y, this.altura / 2 + barraEspessura, height - this.altura / 2 - barraEspessura);
+    }
+
+    exibir() {
+        rectMode(CENTER);
+        rect(this.esquerda ? this.largura : width - this.largura, this.y, this.largura, this.altura);
+    }
+
+    moverIA(bola) {
+        if (bola.y < this.y) {
+            this.y -= velocidadeComputador;
+        } else if (bola.y > this.y) {
+            this.y += velocidadeComputador;
+        }
+        this.y = constrain(this.y, this.altura / 2 + barraEspessura, height - this.altura / 2 - barraEspessura);
+    }
+}
+
+/* Descrição: Este bloco define a classe Remo, que contém a lógica para a inicialização, movimentação, exibição e a função de Inteligência Artificial (IA) para o movimento do remo do computador no jogo.
+*/
+
+// Bloco 4: Função de Setup
+function setup() {
+    createCanvas(600, 400);
+    remoJogador = new Remo(true);
+    remoComputador = new Remo(false);
+    bola = new Bola();
+    bola.inicializar();
+}
+/* function setup() {
+    createCanvas(600, 400);
+    remoJogador = new Remo(true);
+    remoComputador = new Remo(false);
+    bola = new Bola();
+    bola.inicializar();
+}
+*/
+
+// Bloco 5: Função de Desenho (Draw)
+function draw() {
+    background(0);
+
+    // Desenha as barras laterais
+    rectMode(CORNER);
+    fill(255, 0, 0); // Cor vermelha em RGB para as barras laterais.
+    rect(0, 0, width, barraEspessura);
+    rect(0, height - barraEspessura, width, barraEspessura);
+
+    // Pontuação
+    textSize(32);
+    fill(255);
+    text(pontosJogador, width/4, 50);
+    text(pontosComputador, width*3/4, 50);
+
+    remoJogador.exibir();
+    remoJogador.mover(mouseY);
+    remoComputador.exibir();
+    remoComputador.moverIA(bola);
+    bola.exibir();
+    bola.mover();
+
+    if (bola.colisao(remoJogador) || bola.colisao(remoComputador)) {
+        bola.velocidadeX *= -1;
+        bola.aumentarVelocidade();
+    }
+
+    if (bola.x < 0) {
+        pontosComputador++;
+        bola.reiniciar();
+    } else if (bola.x > width) {
+        pontosJogador++;
+        bola.reiniciar();
+    }
+}
+/* Descrição: Este bloco contém a função draw(). Esta função é chamada repetidamente e é usada para desenhar na tela. Ela é responsável por desenhar o jogo na tela, atualizar a posição e exibir os objetos do jogo (remos e bola), controlar as ações baseadas na colisão da bola com os remos e atualizar as pontuações dos jogadores. As barras laterais foram alteradas para a cor vermelha.
+
+*/
